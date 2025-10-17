@@ -1,11 +1,25 @@
 package com.projects.server;
 
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.Arrays;
 
 public class Server {
+    private static final String ADDRESS = "127.0.0.1";
+    private static final int PORT = 8080;
+
     private boolean isRunning = false;
     private final String[] database = new String[1000];
+
+
+    private Socket socket;
+    private DataInputStream in;
+    private DataOutputStream out;
+
 
     public String setCommand(int index, String text) {
         try {
@@ -37,6 +51,11 @@ public class Server {
 
     public void exitCommand() {
         isRunning = false;
+        try {
+            socket.close();
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
     }
 
     public boolean isRunning() {
@@ -60,6 +79,24 @@ public class Server {
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
+    }
+
+    public void connectToLocalHost() {
+        try (ServerSocket server = new ServerSocket(PORT, 50, InetAddress.getByName(ADDRESS))) {
+            socket = server.accept();
+            in = new DataInputStream(socket.getInputStream());
+            out = new DataOutputStream(socket.getOutputStream());
+            System.out.println("Server connected to " + socket.getInetAddress().getHostAddress());
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    public DataInputStream getDataInputStream() {
+        return in;
+    }
+    public DataOutputStream getDataOutputStream() {
+        return out;
     }
 }
 

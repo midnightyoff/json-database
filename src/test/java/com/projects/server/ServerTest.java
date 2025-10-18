@@ -8,10 +8,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class ServerTest {
 
     private Server server;
+    private Database db;
 
     @BeforeEach
     void setUp() {
-        server = new Server();
+        db = new Database();
+        server = new Server(db);
         server.setRunning(true);
         server.executeCommand("set 0 Text0");
         server.executeCommand("set 1 Text1");
@@ -27,38 +29,36 @@ class ServerTest {
     @Test
     void whenDeleteTextStringIsEmpty() {
         server.executeCommand("delete 2");
-        assertEquals("Error: Non-existent string", server.getCommand(2));
+        Response response = db.getCommand("2");
+        assertNull(response.getValue());
     }
 
     @Test
     void setNewString() {
         server.executeCommand("set 3 Text3");
-        assertEquals("Text3", server.getCommand(3));
+        Response response = db.getCommand("3");
+        assertEquals("Text3", response.getValue());
     }
 
     @Test
     void getString() {
-        assertEquals("Text0", server.getCommand(0));
-    }
-
-    @Test
-    void whenGetOnNoneExistingStringPrintError() {
-        assertEquals("Error: Index 1001 out of bounds for length 1000", server.getCommand(1001));
+        Response response = db.getCommand("0");
+        assertEquals("Text0", response.getValue());
     }
 
     @Test
     void whenSetNewStringPrintOK() {
-        assertEquals("OK", server.setCommand(3, "Text3"));
+        assertEquals("OK", db.setCommand("3", "Text3").getResponse());
     }
 
     @Test
     void whenSetNewStringToExistingStringPrintOK() {
-        assertEquals("OK", server.setCommand(3, "Text33333"));
+        assertEquals("OK", db.setCommand("3", "Text33333").getResponse());
     }
 
     @Test
     void whenDeleteExistingStringPrintOK() {
-        assertEquals("OK", server.deleteCommand(2));
+        assertEquals("OK", db.deleteCommand("2").getResponse());
     }
 
 }

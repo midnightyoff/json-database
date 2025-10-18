@@ -1,112 +1,91 @@
 package com.projects.server;
 
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
 
 public class Server {
     private static final String ADDRESS = "127.0.0.1";
     private static final int PORT = 8080;
 
-    private boolean isRunning = false;
-    private final String[] database = new String[1000];
+    private boolean isRunning;
+    private final Database database;
 
-    private Socket socket;
-    private DataInputStream in;
-    private DataOutputStream out;
-
-
-    public String setCommand(int index, String text) {
-        try {
-            database[index] = text;
-        } catch (Exception e) {
-            return "Error: " + e.getMessage();
-        }
-        return "OK";
+    public Server(Database database) {
+        this.database = database;
+        this.isRunning = false;
     }
 
-    public String getCommand(int index) {
-        try {
-            if (database[index] != null) {
-                return database[index];
-            } else throw new Exception("Non-existent string");
+    public void connectToLocalHost() {
+        try (ServerSocket server = new ServerSocket(PORT, 50, InetAddress.getByName(ADDRESS))) {
+            while (isRunning) {
+                try (Socket socket = server.accept();
+                DataInputStream in = new DataInputStream(socket.getInputStream());
+                DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
+                    System.out.println("Server connected to " + socket.getInetAddress().getHostAddress());
+
+                    String requestJson = in.readUTF();
+                    JsonObject reqObj  = JsonParser.parseString(requestJson).getAsJsonObject();
+
+                    String request = reqObj.get("type").getAsString()
+                            + (reqObj.has("key") ? " " + reqObj.get("key").getAsString() : "")
+                            + (reqObj.has("value") ? " " + reqObj.get("value").getAsString() : "");
+
+                    Response response = executeCommand(request);
+                    out.writeUTF(new Gson().toJson(response));
+                }
+            }
         } catch (Exception e) {
-            return "Error: " + e.getMessage();
+            System.out.println("Error: " + e.getMessage());
         }
     }
 
-    public String deleteCommand(int index) {
-        try {
-            database[index] = null;
-        } catch (Exception e) {
-            return "Error: " + e.getMessage();
-        }
-        return "OK";
-    }
 
-    public String exitCommand() {
+    public Response exitCommand() {
         isRunning = false;
-        try {
-            socket.close();
-            return "OK";
-        } catch (Exception e) {
-           return ("Error: " + e.getMessage());
-        }
+        Response response = new Response();
+        response.setResponse("OK");
+        return response;
     }
 
-    public boolean isRunning() {
-        return isRunning;
+    public Response executeCommand(String userInput) {
+        String[] command = userInput.split(" ", 3);
+        try {
+            switch (command[0]) {
+                case "set" -> {
+                    return database.setCommand(command[1], command[2]);
+                }
+                case "delete" -> {
+                    return database.deleteCommand(command[1]);
+                }
+                case "get" -> {
+                    return database.getCommand(command[1]);
+                }
+                case "exit" -> {
+                    return exitCommand();
+                }
+                default -> {
+                    return Response.emptyResponse();
+                }
+            }
+        } catch (Exception e) {
+            return Response.emptyResponse();
+        }
     }
 
     public void setRunning(boolean running) {
         isRunning = running;
     }
 
-    public String executeCommand(String userInput) {
-        String[] command = userInput.split(" ", 3);
-        try {
-            switch (command[0]) {
-                case "set" -> {
-                    return setCommand(Integer.parseInt(command[1]), command[2]);
-                }
-                case "delete" -> {
-                    return deleteCommand(Integer.parseInt(command[1]));
-                }
-                case "get" -> {
-                    return getCommand(Integer.parseInt(command[1]));
-                }
-                case "exit" -> {
-                    return exitCommand();
-                }
-                default -> {
-                    return "Non-existent command: " + Arrays.toString(command);
-                }
-            }
-        } catch (Exception e) {
-            return ("Error: " + e.getMessage());
-        }
-    }
-
-    public void connectToLocalHost() {
-        try (ServerSocket server = new ServerSocket(PORT, 50, InetAddress.getByName(ADDRESS))) {
-            socket = server.accept();
-            in = new DataInputStream(socket.getInputStream());
-            out = new DataOutputStream(socket.getOutputStream());
-            System.out.println("Server connected to " + socket.getInetAddress().getHostAddress());
-        } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage());
-        }
-    }
-
-    public DataInputStream getDataInputStream() {
-        return in;
-    }
-    public DataOutputStream getDataOutputStream() {
-        return out;
+    public boolean isRunning() {
+        return isRunning;
     }
 }
 

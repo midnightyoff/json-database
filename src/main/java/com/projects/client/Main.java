@@ -1,6 +1,7 @@
 package com.projects.client;
 
 import com.beust.jcommander.JCommander;
+import com.google.gson.Gson;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -14,13 +15,13 @@ public class Main {
 
     public static void main(String[] args) {
 
-        JArgs jArgs = new JArgs();
+        Request request = new Request();
         JCommander.newBuilder()
-                .addObject(jArgs)
+                .addObject(request)
                 .build()
                 .parse(args);
 
-        String sentMsg = jArgs.sentMsg();
+        String sentMsg = new Gson().toJson(request);
         String receivedMsg = "";
 
         try (Socket socket = new Socket(InetAddress.getByName(ADDRESS), PORT);

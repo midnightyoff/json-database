@@ -7,21 +7,17 @@ public class Main {
     public static void main(String[] args) {
         Server server = new Server();
         server.setRunning(true);
-        server.connectToLocalHost();
-        String msg = "A record # 12 was sent";
+
         try {
-            while (server.isRunning()) {
+            while (true) {
+                server.connectToLocalHost();
                 DataOutputStream dataOutputStream = server.getDataOutputStream();
                 DataInputStream dataInputStream = server.getDataInputStream();
-                String userResponse = dataInputStream.readUTF();
-                System.out.println("Received: " + userResponse);
-                dataOutputStream.writeUTF(msg);
-                System.out.println("Sent: " + msg);
-                server.exitCommand();
+                String sentMsg = server.executeCommand(dataInputStream.readUTF());
+                dataOutputStream.writeUTF(sentMsg);
             }
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
-
     }
 }

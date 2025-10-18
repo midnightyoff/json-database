@@ -15,7 +15,6 @@ public class Server {
     private boolean isRunning = false;
     private final String[] database = new String[1000];
 
-
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
@@ -49,12 +48,13 @@ public class Server {
         return "OK";
     }
 
-    public void exitCommand() {
+    public String exitCommand() {
         isRunning = false;
         try {
             socket.close();
+            return "OK";
         } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage());
+           return ("Error: " + e.getMessage());
         }
     }
 
@@ -66,18 +66,28 @@ public class Server {
         isRunning = running;
     }
 
-    public void executeCommand(String userInput) {
+    public String executeCommand(String userInput) {
         String[] command = userInput.split(" ", 3);
         try {
             switch (command[0]) {
-                case "set" -> System.out.println(setCommand(Integer.parseInt(command[1]), command[2]));
-                case "delete" -> System.out.println(deleteCommand(Integer.parseInt(command[1])));
-                case "get" -> System.out.println(getCommand(Integer.parseInt(command[1])));
-                case "exit" -> exitCommand();
-                default -> System.out.println("Non-existent command: " + Arrays.toString(command));
+                case "set" -> {
+                    return setCommand(Integer.parseInt(command[1]), command[2]);
+                }
+                case "delete" -> {
+                    return deleteCommand(Integer.parseInt(command[1]));
+                }
+                case "get" -> {
+                    return getCommand(Integer.parseInt(command[1]));
+                }
+                case "exit" -> {
+                    return exitCommand();
+                }
+                default -> {
+                    return "Non-existent command: " + Arrays.toString(command);
+                }
             }
         } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage());
+            return ("Error: " + e.getMessage());
         }
     }
 

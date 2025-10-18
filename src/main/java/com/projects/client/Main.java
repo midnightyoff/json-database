@@ -3,8 +3,10 @@ package com.projects.client;
 import com.beust.jcommander.JCommander;
 import com.google.gson.Gson;
 
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FileReader;
 import java.net.InetAddress;
 import java.net.Socket;
 
@@ -20,6 +22,15 @@ public class Main {
                 .addObject(request)
                 .build()
                 .parse(args);
+
+        if (request.getFileName() != null) {
+            String path = System.getProperty("user.dir") + "/src/main/java/com/projects/client/data/" + request.getFileName();
+            try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+                request = new Gson().fromJson(br, Request.class);
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
 
         String sentMsg = new Gson().toJson(request);
         String receivedMsg = "";

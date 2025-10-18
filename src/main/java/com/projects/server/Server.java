@@ -7,9 +7,13 @@ import com.google.gson.JsonParser;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server {
     private static final String ADDRESS = "127.0.0.1";
@@ -18,29 +22,37 @@ public class Server {
     private boolean isRunning;
     private final Database database;
 
-    public Server(Database database) {
-        this.database = database;
-        this.isRunning = false;
+    public Server() {
+        database = new Database();
+        System.out.println("Server started!");
     }
 
     public void connectToLocalHost() {
-        try (ServerSocket server = new ServerSocket(PORT, 50, InetAddress.getByName(ADDRESS))) {
+        try (ServerSocket server = new ServerSocket(PORT, 50, InetAddress.getByName(ADDRESS));
+             ExecutorService threadPool = Executors.newCachedThreadPool()) {
+            isRunning = true;
             while (isRunning) {
-                try (Socket socket = server.accept();
-                DataInputStream in = new DataInputStream(socket.getInputStream());
-                DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
-                    System.out.println("Server connected to " + socket.getInetAddress().getHostAddress());
+                Socket socket = server.accept();
+//                System.out.println("Server connected to " + socket.getInetAddress().getHostAddress());
+                threadPool.submit(() -> {
+                    try (DataInputStream in = new DataInputStream(socket.getInputStream());
+                         DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
+                        String requestJson = in.readUTF();
+                        System.out.println(Thread.currentThread().getName() + " : received: " + requestJson);
 
-                    String requestJson = in.readUTF();
-                    JsonObject reqObj  = JsonParser.parseString(requestJson).getAsJsonObject();
+                        JsonObject reqObj = JsonParser.parseString(requestJson).getAsJsonObject();
+                        String request = reqObj.get("type").getAsString()
+                                + (reqObj.has("key") ? " " + reqObj.get("key").getAsString() : "")
+                                + (reqObj.has("value") ? " " + reqObj.get("value").getAsString() : "");
+                        Response response = executeCommand(request);
 
-                    String request = reqObj.get("type").getAsString()
-                            + (reqObj.has("key") ? " " + reqObj.get("key").getAsString() : "")
-                            + (reqObj.has("value") ? " " + reqObj.get("value").getAsString() : "");
-
-                    Response response = executeCommand(request);
-                    out.writeUTF(new Gson().toJson(response));
-                }
+                        String responseJson = new Gson().toJson(response);
+                        System.out.println(Thread.currentThread().getName() + " : sent: " + responseJson);
+                        out.writeUTF(responseJson);
+                    } catch (IOException e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                });
             }
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());

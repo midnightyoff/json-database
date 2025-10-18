@@ -13,7 +13,7 @@ class ServerTest {
     @BeforeEach
     void setUp() {
         db = new Database();
-        server = new Server(db);
+        server = new Server();
         server.setRunning(true);
         server.executeCommand("set 0 Text0");
         server.executeCommand("set 1 Text1");

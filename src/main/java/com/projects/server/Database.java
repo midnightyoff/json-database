@@ -1,43 +1,50 @@
 package com.projects.server;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Database {
-    private final Map<String,String> data;
+    private final DatabaseLoader loader;
 
-    Database(){
-        data = new LinkedHashMap<>();
+    Database() {
+        loader = new DatabaseLoader();
     }
 
-    public Response setCommand(String key, String value) {
+    public synchronized Response setCommand(String key, String value) {
+        Map<String, String> list = loader.read();
         Response response = new Response();
-        data.put(key,value);
+        list.put(key, value);
         response.setResponse("OK");
+        loader.write(list);
         return response;
     }
 
-    public Response getCommand(String key) {
+    public synchronized Response getCommand(String key) {
+        Map<String, String> list = loader.read();
         Response response = new Response();
-        if (data.containsKey(key)) {
-            response.setValue(data.get(key));
+        if (list.containsKey(key)) {
+            response.setValue(list.get(key));
             response.setResponse("OK");
         } else {
             response.setResponse("ERROR");
             response.setReason("No such key");
         }
+        loader.write(list);
         return response;
     }
 
-    public Response deleteCommand(String key) {
+    public synchronized Response deleteCommand(String key) {
+        Map<String, String> list = loader.read();
         Response response = new Response();
-        if (data.containsKey(key)) {
-            data.remove(key);
+        if (list.containsKey(key)) {
+            list.remove(key);
             response.setResponse("OK");
         } else {
             response.setResponse("ERROR");
             response.setReason("No such key");
         }
+        loader.write(list);
         return response;
     }
 }

@@ -1,15 +1,17 @@
 package com.projects.server;
 
+import com.google.gson.JsonElement;
+
 public class Response {
     private String response;
-    private String value;
+    private JsonElement value;
     private String reason;
 
     public void setResponse(String response) {
         this.response = response;
     }
 
-    public void setValue(String value) {
+    public void setValue(JsonElement value) {
         this.value = value;
     }
 
@@ -28,11 +30,30 @@ public class Response {
         return response;
     }
 
-    public String getValue() {
+    public JsonElement getValue() {
         return value;
     }
 
     public String getReason() {
         return reason;
+    }
+
+    public static Response createSuccessResponse() {
+        Response response = new Response();
+        response.setResponse("OK");
+        return response;
+    }
+
+    public static Response createSuccessResponse(JsonElement value) {
+        Response response = createSuccessResponse();
+        response.setValue(value);
+        return response;
+    }
+
+    public static Response createErrorResponse(String reason) {
+        Response response = new Response();
+        response.setResponse("ERROR");
+        response.setReason(reason);
+        return response;
     }
 }

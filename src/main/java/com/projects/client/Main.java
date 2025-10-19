@@ -23,16 +23,17 @@ public class Main {
                 .build()
                 .parse(args);
 
+        Object object = request;
         if (request.getFileName() != null) {
             String path = System.getProperty("user.dir") + "/src/main/java/com/projects/client/data/" + request.getFileName();
             try (BufferedReader br = new BufferedReader(new FileReader(path))) {
-                request = new Gson().fromJson(br, Request.class);
+                object = new Gson().fromJson(br, Object.class);
             } catch (Exception e) {
                 System.out.println("Error: " + e.getMessage());
             }
         }
 
-        String sentMsg = new Gson().toJson(request);
+        String sentMsg = new Gson().toJson(object);
         String receivedMsg = "";
 
         try (Socket socket = new Socket(InetAddress.getByName(ADDRESS), PORT);

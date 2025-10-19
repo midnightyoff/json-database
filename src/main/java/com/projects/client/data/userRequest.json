@@ -1,5 +1,1 @@
-{
-  "type":"set",
-  "key":"key5",
-  "value":"Text5"
-}
+{"type":"get","key":["person"]}

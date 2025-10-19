@@ -2,6 +2,7 @@ package com.projects.server;
 
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -11,7 +12,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -21,6 +21,7 @@ public class Server {
 
     private boolean isRunning;
     private final Database database;
+    private ServerSocket serverSocket;
 
     public Server() {
         database = new Database();
@@ -28,12 +29,11 @@ public class Server {
     }
 
     public void connectToLocalHost() {
-        try (ServerSocket server = new ServerSocket(PORT, 50, InetAddress.getByName(ADDRESS));
-             ExecutorService threadPool = Executors.newCachedThreadPool()) {
+        try (ExecutorService threadPool = Executors.newCachedThreadPool()) {
+            serverSocket = new ServerSocket(PORT, 50, InetAddress.getByName(ADDRESS));
             isRunning = true;
             while (isRunning) {
-                Socket socket = server.accept();
-//                System.out.println("Server connected to " + socket.getInetAddress().getHostAddress());
+                Socket socket = serverSocket.accept();
                 threadPool.submit(() -> {
                     try (DataInputStream in = new DataInputStream(socket.getInputStream());
                          DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
@@ -41,10 +41,7 @@ public class Server {
                         System.out.println(Thread.currentThread().getName() + " : received: " + requestJson);
 
                         JsonObject reqObj = JsonParser.parseString(requestJson).getAsJsonObject();
-                        String request = reqObj.get("type").getAsString()
-                                + (reqObj.has("key") ? " " + reqObj.get("key").getAsString() : "")
-                                + (reqObj.has("value") ? " " + reqObj.get("value").getAsString() : "");
-                        Response response = executeCommand(request);
+                        Response response = executeCommand(reqObj);
 
                         String responseJson = new Gson().toJson(response);
                         System.out.println(Thread.currentThread().getName() + " : sent: " + responseJson);
@@ -62,23 +59,30 @@ public class Server {
 
     public Response exitCommand() {
         isRunning = false;
-        Response response = new Response();
-        response.setResponse("OK");
-        return response;
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        return Response.createSuccessResponse();
     }
 
-    public Response executeCommand(String userInput) {
-        String[] command = userInput.split(" ", 3);
+    public Response executeCommand(JsonObject reqObj) {
+        String type = reqObj.get("type").getAsString();
         try {
-            switch (command[0]) {
+            switch (type) {
                 case "set" -> {
-                    return database.setCommand(command[1], command[2]);
+                    JsonElement key = reqObj.get("key");
+                    JsonElement value = reqObj.get("value");
+                    return database.setCommand(key, value);
                 }
                 case "delete" -> {
-                    return database.deleteCommand(command[1]);
+                    JsonElement key = reqObj.get("key");
+                    return database.deleteCommand(key);
                 }
                 case "get" -> {
-                    return database.getCommand(command[1]);
+                    JsonElement key = reqObj.get("key");
+                    return database.getCommand(key);
                 }
                 case "exit" -> {
                     return exitCommand();

@@ -3,57 +3,29 @@ package com.projects.server;
 import com.google.gson.JsonElement;
 
 public class Response {
-    private String response;
-    private JsonElement value;
-    private String reason;
+    private final String response;
+    private final JsonElement value;
+    private final String reason;
 
-    public void setResponse(String response) {
+    Response(String response, JsonElement value, String reason) {
         this.response = response;
-    }
-
-    public void setValue(JsonElement value) {
         this.value = value;
-    }
-
-    public void setReason(String reason) {
         this.reason = reason;
     }
 
+    public static Response success() {
+        return new Response("OK", null, null);
+    }
+
+    public static Response success(JsonElement value) {
+        return new Response("OK", value, null);
+    }
+
+    public static Response error(String reason) {
+        return new Response("ERROR", null, reason);
+    }
+
     public static Response emptyResponse() {
-        Response response = new Response();
-        response.setResponse("ERROR");
-        response.setReason("No such operation");
-        return response;
-    }
-
-    public String getResponse() {
-        return response;
-    }
-
-    public JsonElement getValue() {
-        return value;
-    }
-
-    public String getReason() {
-        return reason;
-    }
-
-    public static Response createSuccessResponse() {
-        Response response = new Response();
-        response.setResponse("OK");
-        return response;
-    }
-
-    public static Response createSuccessResponse(JsonElement value) {
-        Response response = createSuccessResponse();
-        response.setValue(value);
-        return response;
-    }
-
-    public static Response createErrorResponse(String reason) {
-        Response response = new Response();
-        response.setResponse("ERROR");
-        response.setReason(reason);
-        return response;
+        return new Response("ERROR", null, "No such operation");
     }
 }

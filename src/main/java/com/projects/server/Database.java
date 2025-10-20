@@ -8,52 +8,47 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Database {
-    private final DatabaseLoader loader;
+    private final DatabaseLoader loader = new DatabaseLoader();;
 
-    Database() {
-        loader = new DatabaseLoader();
-    }
-
-    public synchronized Response setCommand(JsonElement key, JsonElement value) {
+    public Response setCommand(JsonElement key, JsonElement value) {
         List<String> path = toPath(key);
         if (path.isEmpty()) {
-            return Response.createErrorResponse("No such key");
+            return Response.error("No such key");
         }
-
         try {
             JsonObject root = loader.read();
             JsonObject parent = ensureParent(root, path);
             String last = path.get(path.size() - 1);
             parent.add(last, value);
             loader.write(root);
-            return Response.createSuccessResponse();
+            return Response.success();
         } catch (Exception e) {
-            return Response.createErrorResponse("Operation failed: " + e.getMessage());
+            return Response.error("Operation failed: " + e.getMessage());
         }
     }
 
-    public synchronized Response getCommand(JsonElement key) {
+    public Response getCommand(JsonElement key) {
         List<String> path = toPath(key);
         if (path.isEmpty()) {
-            return Response.createErrorResponse("No such key");
+            return Response.error("No such key");
         }
 
         try {
             JsonObject root = loader.read();
             JsonElement value = getByPath(root, path);
             if (value == null) {
-                return Response.createErrorResponse("No such key");
+                return Response.error("No such key");
             }
-            return Response.createSuccessResponse(value);
+            return Response.success(value);
         } catch (Exception e) {
-            return Response.createErrorResponse("Operation failed: " + e.getMessage());
+            return Response.error("Operation failed: " + e.getMessage());
         }
     }
 
-    public synchronized Response deleteCommand(JsonElement key) {
+    public Response deleteCommand(JsonElement key) {
         List<String> path = toPath(key);
         if (path.isEmpty()) {
-            return Response.createErrorResponse("No such key");
+            return Response.error("No such key");
         }
 
         try {
@@ -62,14 +57,14 @@ public class Database {
             String last = path.get(path.size() - 1);
 
             if (parent == null || !parent.has(last)) {
-                return Response.createErrorResponse("No such key");
+                return Response.error("No such key");
             }
 
             parent.remove(last);
             loader.write(root);
-            return Response.createSuccessResponse();
+            return Response.success();
         } catch (Exception e) {
-            return Response.createErrorResponse("Operation failed: " + e.getMessage());
+            return Response.error("Operation failed: " + e.getMessage());
         }
     }
 
@@ -86,18 +81,18 @@ public class Database {
     }
 
     private static JsonObject ensureParent(JsonObject root, List<String> path) {
-        JsonObject cur = root;
+        JsonObject current = root;
         for (int i = 0; i < path.size() - 1; i++) {
-            String k = path.get(i);
-            if (!cur.has(k) || !cur.get(k).isJsonObject()) {
+            String key = path.get(i);
+            if (!current.has(key) || !current.get(key).isJsonObject()) {
                 JsonObject created = new JsonObject();
-                cur.add(k, created);
-                cur = created;
+                current.add(key, created);
+                current = created;
             } else {
-                cur = cur.getAsJsonObject(k);
+                current = current.getAsJsonObject(key);
             }
         }
-        return cur;
+        return current;
     }
 
     private static JsonElement getByPath(JsonObject root, List<String> path) {

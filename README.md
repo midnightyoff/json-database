@@ -38,3 +38,7 @@ java Main -t <type> -k <key> [-v <value>]
 **For example**: 
 - `java Main -t set -k "text" -v "Here is some text to store on the server"`
 - `java Main -in "userRequest.json"`
+
+## Preview 
+
+<img width="1210" height="161" alt="image" src="https://github.com/user-attachments/assets/51d643e9-b099-418d-9c6c-0c9f9128e352" />
